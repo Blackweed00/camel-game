@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camel Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            background-color: #000080; /* Bleu foncé */
+            border: 1px solid #000000;
+        }
+        #score, #highScore {
+            font-size: 24px;
+            color: #ff0000; /* Rouge */
+            margin: 10px 0;
+        }
+        #replayButton {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #ff0000; /* Rouge */
+            border: none;
+            cursor: pointer;
+        }
+        #replayButton:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <div id="highScore">Meilleur Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <button id="replayButton" onclick="replay()">Rejouer</button>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('highScore');
+
+        const box = 20;
+        const rows = canvas.height / box;
+        const columns = canvas.width / box;
+
+        let game;
+        let direction;
+        let camel;
+        let apple;
+        let score;
+        let highScore = 0;
+
+        const camelImg = new Image();
+        camelImg.src = 'camel.png';
+
+        const appleImg = new Image();
+        appleImg.src = 'apple.png';
+
+        document.addEventListener('keydown', setDirection);
+
+        function setDirection(event) {
+            if (event.keyCode === 37 && direction !== 'RIGHT') {
+                direction = 'LEFT';
+            } else if (event.keyCode === 38 && direction !== 'DOWN') {
+                direction = 'UP';
+            } else if (event.keyCode === 39 && direction !== 'LEFT') {
+                direction = 'RIGHT';
+            } else if (event.keyCode === 40 && direction !== 'UP') {
+                direction = 'DOWN';
+            }
+        }
+
+        function collision(newHead, array) {
+            for (let i = 0; i < array.length; i++) {
+                if (newHead.x === array[i].x && newHead.y === array[i].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < camel.length; i++) {
+                ctx.drawImage(camelImg, camel[i].x, camel[i].y, box, box);
+            }
+
+            ctx.drawImage(appleImg, apple.x, apple.y, box, box);
+
+            let camelX = camel[0].x;
+            let camelY = camel[0].y;
+
+            if (direction === 'LEFT') camelX -= box;
+            if (direction === 'UP') camelY -= box;
+            if (direction === 'RIGHT') camelX += box;
+            if (direction === 'DOWN') camelY += box;
+
+            if (camelX === apple.x && camelY === apple.y) {
+                apple = {
+                    x: Math.floor(Math.random() * columns) * box,
+                    y: Math.floor(Math.random() * rows) * box
+                };
+                score++;
+                scoreDisplay.innerText = 'Score: ' + score;
+                if (score > highScore) {
+                    highScore = score;
+                    highScoreDisplay.innerText = 'Meilleur Score: ' + highScore;
+                }
+            } else {
+                camel.pop();
+            }
+
+            let newHead = { x: camelX, y: camelY };
+
+            if (
+                camelX < 0 ||
+                camelY < 0 ||
+                camelX >= canvas.width ||
+                camelY >= canvas.height ||
+                collision(newHead, camel)
+            ) {
+                clearInterval(game);
+                document.getElementById('replayButton').style.display = 'block';
+                return;
+            }
+
+            camel.unshift(newHead);
+        }
+
+        function replay() {
+            direction = null;
+            camel = [{ x: 9 * box, y: 10 * box }];
+            apple = {
+                x: Math.floor(Math.random() * columns) * box,
+                y: Math.floor(Math.random() * rows) * box
+            };
+            score = 0;
+            scoreDisplay.innerText = 'Score: ' + score;
+            document.getElementById('replayButton').style.display = 'none';
+            game = setInterval(draw, 100);
+        }
+
+        replay(); // Initialiser le jeu la première fois
+    </script>
+</body>
+</html>
